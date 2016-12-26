@@ -1,4 +1,4 @@
 #! /bin/sh
 
-python manager.py createall
-python manager.py rungunicorn
+python manager.py -n qiandao createall
+python manager.py -n qiandao rungunicorn
