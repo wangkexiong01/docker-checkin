@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <meta name="keywords" content="">
+        <meta name="description" content="">
+
+        <title> {% block title %}{% endblock %} </title>
+
+        {%- block css %}
+        <link rel="stylesheet" href="{{ theme_static('bootstrap.min.css') }}" type="text/css"/>
+        <link rel="stylesheet" href="{{ theme_static('metisMenu.min.css') }}" type="text/css"/>
+        <link rel="stylesheet" href="{{ theme_static('sb-admin-2.min.css') }}" type="text/css"/>
+        <link rel="stylesheet" href="{{ theme_static('font-awesome.min.css') }}" type="text/css"/>
+        {%- endblock %}
+
+        {%- block js %}
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <script src="{{ theme_static('jquery.min.js') }}"></script>
+        <script src="{{ theme_static('bootstrap.min.js') }}"></script>
+        <script src="{{ theme_static('metisMenu.min.js') }}"></script>
+        <script src="{{ theme_static('sb-admin-2.min.js') }}"></script>
+        {%- endblock %}
+
+        {% import theme('macros.html') as utils %}
+    </head>
+
+    <body>
+        {% block content %}{% endblock content%}
+    </body>
+
+</html>

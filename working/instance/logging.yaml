@@ -1,0 +1,33 @@
+---
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  brief:
+    format: "%(levelname)-8s: %(message)s"
+  precise:
+    format: "%(asctime)s %(filename)15s:%(lineno)-3d %(levelname)-7s - %(processName)s/%(threadName)s %(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: precise
+    stream: ext://sys.stdout
+  rotateFile:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: precise
+    filename: logs/debug.log
+    maxBytes: 100000
+    backupCount: 5
+
+loggers:
+  qiandao:
+    level: DEBUG
+    handlers: [console, rotateFile]
+  qiandao.libs.curl:
+    level: DEBUG
+  qiandao.jobs.daily_checkinjob:
+    level: DEBUG
+...

@@ -1,0 +1,5 @@
+{% import theme('macros.html') as macros %}
+
+{% for var in vars %}
+    {{ macros.new_text_field(var, label=var.title(), placeholder=_("Plz input %(var)s", var=var)) }}
+{% endfor %}

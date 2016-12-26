@@ -1,0 +1,14 @@
+{% extends theme('layout.html') %}
+
+{% block content %}
+    <div class="container">
+
+    {% include 'tpl/_upload.html' %}
+
+    {% for template in tpls %}
+        <div>{{ template.name }}  <a class="modal_load" href= {{ url_for('tpl.create_job', tpl_id=template.id) }}> create </a></div>
+    {% endfor %}
+
+    {{ utils.modal_load() }}
+    </div>
+{% endblock %}

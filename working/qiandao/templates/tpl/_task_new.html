@@ -1,0 +1,23 @@
+{% import theme('macros.html') as macros %}
+
+{{ flask_util_js.js }}
+
+{% call macros.render_form(form,
+                           action_url=url_for('tpl.create_job', tpl_id=form.tpl.default) if form.tpl.default != 0 else "javascript:void(0)",
+                           action_text=form.submit.label.text) %}
+    {{ macros.render_field(form.tpl) }}
+
+    <div id="variables">
+        {% include "tpl/_task_new_vars.html" %}
+    </div>
+{% endcall %}
+
+<script>
+    $(function () {
+        // load tpl variables
+        $('select[name=tpl]').on('change', function () {
+            $('#variables').load(flask_util.url_for('tpl.tpl_vars', {tpl_id: $(this).val()}));
+            $('form').attr('action', flask_util.url_for('tpl.create_job', {tpl_id: $(this).val()}))
+        });
+    })
+</script>

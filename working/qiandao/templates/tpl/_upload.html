@@ -1,0 +1,3 @@
+{% import theme('macros.html') as macros %}
+
+{{ macros.render_form(form, upload_file=True, action_url=url_for('tpl.har_upload'), action_text=form.submit.label.text) }}

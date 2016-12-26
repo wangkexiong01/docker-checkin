@@ -1,0 +1,9 @@
+{
+  "application": "qiandao",
+  "identifier": "default",
+  "name": "default",
+  "author": "wangkexiong",
+  "description": "default using bootstrap",
+  "license": "MIT/X11",
+  "doctype": "html5"
+}
