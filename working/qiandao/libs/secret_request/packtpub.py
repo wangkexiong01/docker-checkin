@@ -31,7 +31,7 @@ class PacktRequest(LoginRequest):
         ret = u'Login Failed'
 
         resp = self.fetch(self.login_url)
-        if self._data.get('code') == 200:
+        if self.data.get('code') == 200:
             dom = lxml.html.fromstring(resp)
             hidden = dom.xpath('//form[@id="packt-user-login-form"]/div/input')
 
@@ -40,7 +40,7 @@ class PacktRequest(LoginRequest):
                 postdata[i.name] = i.value
 
             resp = self.fetch(self.login_url, method='POST', data=postdata)
-            if self._data.get('code') == 200:
+            if self.data.get('code') == 200:
                 dom = lxml.html.fromstring(resp)
                 if len(dom.xpath('//form[@id="packt-user-login-form"]/div/input[@name="form_token"]')) == 1:
                     ret = None
@@ -89,7 +89,7 @@ class PacktRequest(LoginRequest):
                         resp = self.fetch(book_url)
                         times += 1
 
-                        if self._data.get('url') == 'https://www.packtpub.com/account/my-ebooks':
+                        if self.data.get('url') == 'https://www.packtpub.com/account/my-ebooks':
                             logger.info('[packtpub] Acquire Free EBook: %s' % book)
                             repeat = False
                         elif times < 2:

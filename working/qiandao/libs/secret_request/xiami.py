@@ -32,8 +32,8 @@ class XiamiRequest(LoginRequest):
         postdata = {'email': account, 'password': password, 'remember': 1, 'LoginButton': u'登录'.encode('utf-8')}
         resp = self.fetch(self.login_url, method='POST', data=postdata)
 
-        if self._data.get('code') == 200:
-            if self._data.get('url') == 'http://www.xiami.com/web/profile':
+        if self.data.get('code') == 200:
+            if self.data.get('url') == 'http://www.xiami.com/web/profile':
                 ret = None
                 logger.info('[xiami] Successfully login for %s' % account)
             else:

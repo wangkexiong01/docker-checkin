@@ -35,10 +35,7 @@ def configure_logging(app):
     # Fix: If using logging system. This should be set.
     # Otherwise, after app.debug set/resetting. Parent with default formatter will be in working.
     app.logger.propagate = False
-
-    handlers = logging.getLogger(__name__).handlers
-    if len(handlers) > 0:
-        app.logger.handlers = handlers
+    app.logger.handlers = []
 
 
 def configure_extensions(app):

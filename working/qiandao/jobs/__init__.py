@@ -2,7 +2,7 @@
 
 import logging
 
-from .daily_checkinjob import DailyCheckinJob
+from .checkin import DailyCheckinJob
 
 logger = logging.getLogger(__name__)
 
@@ -16,3 +16,4 @@ def configure_jobs(app, db_engine):
     if not hasattr(app, 'extensions'):
         app.extensions = {}
     app.extensions['daemon_jobs'] = daemon_job
+    logger.debug('app(%s) started checkin jobs in thread pool(%s)' % (id(app), id(daemon_job)))

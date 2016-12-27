@@ -16,7 +16,7 @@ from ..models import XiamiUser, BanyungongUser, ZimuzuUser, PacktUser
 
 logger = logging.getLogger(__name__)
 
-secret_helper = {
+site_helper = {
     'packtpub': (0, PacktRequest, PacktUser),  # Server in British
     'xiami': (8, XiamiRequest, XiamiUser),  # Server for China
     'banyungong': (8, BanyungongRequest, BanyungongUser),
@@ -24,27 +24,57 @@ secret_helper = {
 }
 
 
-class DailyCheckinJob(object):
-    def __init__(self, db_engine, max_workers=100):
-        self.db_engine = db_engine
-        self.administration = True
+def singleton(klass):
+    instances = {}
 
+    def get_instance(*args, **kwargs):
+        if klass not in instances:
+            return instances.setdefault(klass, klass(*args, **kwargs))
+        else:
+            return instances[klass]
+
+    get_instance.klass = klass
+    return get_instance
+
+
+@singleton
+class DailyCheckinJob(object):
+    check_point = '00:55'
+
+    def __init__(self, db_engine, max_workers=100):
+        # Mark if background jobs already running
+        self.working = False
+        # Only after 1st round of running, start period schedule
+        self.administration = True
+        # Mark if there is already running jobs for the site
+        self.supervisor = {}
+        for site in site_helper:
+            self.supervisor[site] = False
+
+        # Using Flask db_engine to make DB session
+        self.db_engine = db_engine
+
+        # Period Schedule
         self.timer = None
         self.scheduler = Scheduler()
 
-        self.commander = ThreadPoolExecutor(max_workers=len(secret_helper) * 2 + 2)
-        self.supervisor = {}
-        for site in secret_helper:
-            self.supervisor[site] = False
-        self.process_queue = Queue.Queue()
-
+        # Query necessary accounts for checkin jobs (Flow Control)
+        self.commander = ThreadPoolExecutor(max_workers=len(site_helper) * 2 + 2)
+        # ThreadPool for checkin jobs running
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
-        self.batch = (max_workers - 2) / len(secret_helper)
+        # Exclude the thread for handle_process_queue and handle_result_queue
+        self.batch = (max_workers - 2) / len(site_helper)
+
+        self.process_queue = Queue.Queue()
         self.result_queue = Queue.Queue()
 
     def start(self):
-        minute = '00:15'
-        logger.debug('Hourly trigger at %s' % minute)
+        if self.working:
+            logger.debug('The checkin background jobs already started...')
+            return
+
+        minute = self.check_point
+        logger.debug('Schedule very hour at %s...' % minute)
         self.scheduler.every().hour.at(minute).do(self.renew_waiting)
 
         t = Thread(target=self.run_schedule)
@@ -53,53 +83,53 @@ class DailyCheckinJob(object):
         t.start()
         self.timer = t
 
-        t = Thread(target=self.run_wait)
-        t.setName('JobAdmin')
+        t = Thread(target=self.run_trigger)
+        t.setName('FirstTrigger')
         t.setDaemon(True)
         t.start()
+
+        self.working = True
 
     def run_schedule(self):
         while True:
             self.scheduler.run_pending()
             time.sleep(1)
 
-    def run_wait(self):
-        time.sleep(60)
+    def run_trigger(self):
+        time.sleep(60)  # Administration Work should be finished in 60s
 
         self.executor.submit(self.handle_process_queue)
         self.executor.submit(self.handle_result_queue)
 
-        for site in secret_helper:
+        for site in site_helper:
             if not self.supervisor[site]:
                 self.commander.submit(self.produce, site, action='Retry')
-                logger.debug('[%s] Retry accounts not running today ...' % site)
+                logger.debug('[%s] Trigger those accounts not checkin today ...' % site)
 
         self.administration = False
 
     def renew_waiting(self):
         if not self.administration:
-            for site in secret_helper:
-                if (datetime.utcnow().hour + secret_helper[site][0]) % 24 == 23:
-                    self.supervisor[site] = False  # Close thread for today
+            for site in site_helper:
+                if (datetime.utcnow().hour + site_helper[site][0]) % 24 == 23:
                     self.commander.submit(self.produce, site)  # Submit new thread for tomorrow
-                    logger.debug('[%s] A new day transaction is coming ...' % site)
                 else:
                     if not self.supervisor[site]:
                         self.commander.submit(self.produce, site, action='Retry')
-                        logger.debug('[%s] Retry accounts that is not OK in previous round ...' % site)
         else:
             logger.debug('Under administration ...')
 
     def produce(self, site, action='Normal'):
         if action.upper() == 'NORMAL':
+            self.supervisor[site] = False  # Close another thread for today
+
             # Waiting for last piece of thread doing this job closed
-            # Waiting for site change another day's checkin section
+            # Waiting for site to change another day's section
             silence = random.randrange(5 * 60, 10 * 60)
-            silence = 0
-            logger.debug('Generally delay %s seconds for %s jobs starting ...' % (silence, site))
+            logger.debug('[%s] Delay %s seconds to close session for toady and start new session ...' % (site, silence))
             time.sleep(silence)
         elif self.supervisor[site]:
-            logger.debug('Another thread is working with %s accounts ...' % site)
+            logger.debug('[%s] Another thread is working with retried accounts ...' % site)
             return
 
         session_type = sessionmaker(bind=self.db_engine)
@@ -109,7 +139,7 @@ class DailyCheckinJob(object):
         try:
             self.supervisor[site] = True
             while self.supervisor[site]:
-                timezone, _, job_model = secret_helper[site]
+                timezone, _, job_model = site_helper[site]
 
                 if action.upper() == 'NORMAL':
                     prepare = session.query(job_model).limit(self.batch).offset(offset).all()
@@ -140,7 +170,7 @@ class DailyCheckinJob(object):
         days = None  # Clean result for each request
         expired = False
 
-        _, job_class, _ = secret_helper[site]
+        _, job_class, _ = site_helper[site]
         request = job_class()
         try:
             if cookie is not None:
@@ -148,9 +178,8 @@ class DailyCheckinJob(object):
                 request.load_cookie(cookie)
                 days = request.checkin(cookie)
 
-            if days is None:
-                if request._data:
-                    expired = True
+            if days is None and request.data:
+                expired = True
 
                 if password is not None:  # Try if password stored
                     logger.debug('[%s] Using password for %s' % (site, account))
@@ -173,7 +202,7 @@ class DailyCheckinJob(object):
             request.clear_cookie()
         except Exception, e:
             logger.error(e)
-            logger.error('Error happened while processing %s user: %s, skip to next...' % (site, account))
+            logger.error('[%s] Error happened while processing user: %s, skip to next...' % (site, account))
 
     def handle_process_queue(self):
         while True:
@@ -191,7 +220,7 @@ class DailyCheckinJob(object):
                 result = self.result_queue.get()
                 if result is not None:
                     site = result['site']
-                    _, _, job_model = secret_helper[site]
+                    _, _, job_model = site_helper[site]
 
                     account = result['account']
                     dump = result['dump']
@@ -200,9 +229,6 @@ class DailyCheckinJob(object):
 
                     update_fields = {}
                     if days is not None:
-                        update_fields['checkin2'] = job_model.checkin1
-                        update_fields['checkin1'] = job_model.checkin0
-                        update_fields['checkin0'] = days
                         update_fields['cookie'] = dump
                         update_fields['cookie_inuse'] = job_model.cookie_inuse + 1
                         update_fields['last_success'] = int(time.time())
@@ -212,13 +238,17 @@ class DailyCheckinJob(object):
                         update_fields['last_fail'] = int(time.time())
                         update_fields['cont_fails'] = job_model.cont_fails + 1
 
+                    update_fields['checkin2'] = job_model.checkin1
+                    update_fields['checkin1'] = job_model.checkin0
+                    update_fields['checkin0'] = days
+
                     if expired:
                         update_fields['cookie_life'] = job_model.cookie_inuse
                         update_fields['cookie_inuse'] = 0
 
                     session.query(job_model).filter_by(account=account).update(update_fields)
                     session.commit()
-                    logger.info('[%s] %s update  DB record ...' % (site, account))
+                    logger.info('[%s] %s update DB record ...' % (site, account))
             except Queue.Empty:
                 pass
             except Exception, e:

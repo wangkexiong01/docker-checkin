@@ -14,9 +14,9 @@ class BanyungongRequest(LoginRequest):
         LoginRequest.__init__(self)
 
         self.tag = '[**banyungong**]'
-        self.login_url = 'http://banyungong.org/Login.html'
-        self.checkin_url = 'http://banyungong.org/daysign.html'
-        self.logout_url = 'http://banyungong.org/'
+        self.login_url = 'http://www.banyungong.org'
+        self.checkin_url = 'http://www.banyungong.org/daysign.html'
+        self.logout_url = 'http://www.banyungong.org/'
 
     def login(self, account, password):
         """
@@ -30,22 +30,25 @@ class BanyungongRequest(LoginRequest):
         ret = u'Login Failed'
 
         resp = self.fetch(self.login_url)
-        if self._data.get('code') == 200:
+        if self.data.get('code') == 200:
             dom = lxml.html.fromstring(resp)
             hidden = dom.xpath('//input')
 
-            postdata = {'category': 0, 'txtID': account, 'txtPass': password, 'ckbAutoLogin': 'on',
-                        'btnLogin': u'登录'.encode('utf-8'),
-                        'ucHeader1$txtID': '', 'ucHeader1$txtPass': '', 'ucHeader1$txtSearch': ''}
+            postdata = {'category': 0, 'ucHeader1$ckbAutoLogin': 'on',
+                        'ucHeader1$btnLogin': u'登录'.encode('utf-8'),
+                        'ucHeader1$txtID': account, 'ucHeader1$txtPass': password, 'ucHeader1$txtSearch': ''}
             for i in hidden:
                 if i.name in ['__EVENTTARGET', '__EVENTARGUMENT', '__VIEWSTATE', '__VIEWSTATEGENERATOR',
                               '__EVENTVALIDATION']:
                     postdata[i.name] = i.value
 
             resp = self.fetch(self.login_url, method='POST', data=postdata)
-            if self._data.get('code') == 200 and self._data.get('url') == 'http://banyungong.net/users/index.html':
-                ret = None
-                logger.info('[banyungong] %s Successfully login ...' % account)
+            if self.data.get('code') == 200:
+                dom = lxml.html.fromstring(resp)
+                sign_href = dom.xpath('//div[@id="require"]/a[@id="ucHeader1_hlkDaySign"]')
+                if len(sign_href) > 0 and sign_href[0].text == u'每日签到':
+                    ret = None
+                    logger.info('[banyungong] %s Successfully login ...' % account)
             else:
                 dom = lxml.html.fromstring(resp)
                 for i in dom.xpath('//span[@id="lblError"]'):

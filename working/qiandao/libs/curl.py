@@ -17,10 +17,10 @@ class LoginRequest(object):
     def __init__(self):
         self.cookie = None
         self.opener = None
-        self._data = None
+        self.data = None
 
     def clear_cookie(self):
-        logging.info('Clear Cookie ...')
+        logging.debug('Clear Cookie ...')
         self.cookie = None
         self.opener = None
 
@@ -102,7 +102,7 @@ class LoginRequest(object):
         response = None
         resp = None
         retry = False
-        self._data = {}
+        self.data = {}
 
         try:
             logger.info('Send out request ...')
@@ -148,7 +148,7 @@ class LoginRequest(object):
             logger.debug('Decompress the received packets ...')
         else:
             r = resp
-        self._data['gzip'] = is_gzip
+        self.data['gzip'] = is_gzip
 
         try:
             ret = r.decode('utf-8')
@@ -156,10 +156,10 @@ class LoginRequest(object):
             logger.warn('NOT Unicode, return what we got from server ...')
             ret = r
 
-        self._data['code'] = response.getcode()
-        self._data['url'] = response.geturl()
-        self._data['headers'] = response.headers.dict
+        self.data['code'] = response.getcode()
+        self.data['url'] = response.geturl()
+        self.data['headers'] = response.headers.dict
 
-        logger.debug('Fetch Result for Request: %s\n%s' % (url, json.dumps(self._data, indent=4)))
+        logger.debug('Fetch Result for Request: %s\n%s' % (url, json.dumps(self.data, indent=4)))
 
         return ret
