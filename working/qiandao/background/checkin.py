@@ -178,9 +178,10 @@ class DailyCheckinJob(object):
                 request.load_cookie(cookie)
                 days = request.checkin(cookie)
 
-            if days is None and request.data:
-                expired = True
+                if days is None and 'error' not in request.result:
+                    expired = True
 
+            if request.result is None or expired is True:
                 if password is not None:  # Try if password stored
                     logger.debug('[%s] Using password for %s' % (site, account))
                     resp = request.login(account, password)
@@ -226,12 +227,14 @@ class DailyCheckinJob(object):
                     dump = result['dump']
                     expired = result['expired']
                     days = result['checkin']
+                    logger.debug('Receive result from %s with %s ...' % (site, account))
 
                     update_fields = {}
                     if days is not None:
                         update_fields['cookie'] = dump
                         update_fields['cookie_inuse'] = job_model.cookie_inuse + 1
                         update_fields['last_success'] = int(time.time())
+                        update_fields['last_fail'] = 0
                         update_fields['day_fails'] = 0
                         update_fields['cont_fails'] = 0
                     else:
@@ -248,7 +251,7 @@ class DailyCheckinJob(object):
 
                     session.query(job_model).filter_by(account=account).update(update_fields)
                     session.commit()
-                    logger.info('[%s] %s update DB record ...' % (site, account))
+                    logger.debug('[%s] %s update DB record ...' % (site, account))
             except Queue.Empty:
                 pass
             except Exception, e:

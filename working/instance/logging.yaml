@@ -19,15 +19,16 @@ handlers:
     level: DEBUG
     formatter: precise
     filename: logs/debug.log
-    maxBytes: 100000
+    maxBytes: 512000
     backupCount: 5
 
 loggers:
   qiandao:
     level: DEBUG
     handlers: [console, rotateFile]
+    propagate: False
   qiandao.libs.curl:
     level: DEBUG
-  qiandao.jobs.daily_checkinjob:
+  qiandao.background.checkinjob:
     level: DEBUG
 ...

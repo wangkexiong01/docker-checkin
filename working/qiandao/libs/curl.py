@@ -17,7 +17,7 @@ class LoginRequest(object):
     def __init__(self):
         self.cookie = None
         self.opener = None
-        self.data = None
+        self.result = None
 
     def clear_cookie(self):
         logging.debug('Clear Cookie ...')
@@ -26,7 +26,7 @@ class LoginRequest(object):
 
     def load_cookie(self, cookie):
         if isinstance(cookie, str):
-            logging.info('Load Cookie ...')
+            logging.debug('Load Cookie ...')
             self.cookie = strcookiejar.StrCookieJar(cookie)
             self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
 
@@ -47,7 +47,7 @@ class LoginRequest(object):
         """
         result = self.curl(url, verifycert=verifycert, method=method, header=header, data=data, wait=wait)
         if result == '':
-            logging.info('Request result is None, return EMPTY HTML ...')
+            logging.debug('Request result is None, return EMPTY HTML ...')
             return '<html />'
         else:
             return result
@@ -62,6 +62,9 @@ class LoginRequest(object):
         :param wait: Request wait time, default 5s
         :return: The page content requested. When network issue/HTTPS certification issue happened, returned ''
         """
+        self.result = dict()
+        self.result['error'] = 'Unknown'
+
         if not urlparse.urlparse(url).scheme:
             url = "http://" + url
         logger.debug('Requested %s URL: %s' % (method, url))
@@ -84,7 +87,7 @@ class LoginRequest(object):
 
         if header and type(header) is dict:
             _headers.update(header)
-        logger.debug('Construct HTTP headers:\n%s' % json.dumps(_headers, indent=4))
+            logger.debug('Construct HTTP headers:\n%s' % json.dumps(_headers, indent=4))
 
         if type(data) is not dict:
             data = {}
@@ -96,16 +99,14 @@ class LoginRequest(object):
             if data:
                 data = urllib.urlencode(data).encode('utf-8')
                 url = '%s?%s' % (url, data)
-
             request = urllib2.Request(url=url, headers=_headers)
 
         response = None
         resp = None
         retry = False
-        self.data = {}
 
         try:
-            logger.info('Send out request ...')
+            logger.debug('Send out request ...')
             response = self.opener.open(request, timeout=wait)
             resp = response.read()
         except urllib2.URLError as e:
@@ -114,13 +115,14 @@ class LoginRequest(object):
                 retry = True
             else:
                 logger.error('Caught URLError, reason: %s', error)
+                self.result['error'] = error
                 return ''
         except:
-            logger.error('Caught urllib2 Error, maybe bad url? or website down? ...')
+            logger.error('Caught urllib2 Error, maybe website down or link broken? ...')
             return ''
 
         if retry:
-            logger.info('Disable SSL Certification verify and retry the request ...')
+            logger.debug('Disable SSL Certification verify and retry the request ...')
 
             backup = ssl._create_default_https_context
             ssl._create_default_https_context = ssl._create_unverified_context
@@ -129,7 +131,6 @@ class LoginRequest(object):
                 resp = response.read()
             except:
                 logger.error('Still no response without SSL Certificate verification ....')
-
                 return ''
             finally:
                 logger.debug('Restore the SSL context for the next time request ...')
@@ -148,7 +149,7 @@ class LoginRequest(object):
             logger.debug('Decompress the received packets ...')
         else:
             r = resp
-        self.data['gzip'] = is_gzip
+        self.result['gzip'] = is_gzip
 
         try:
             ret = r.decode('utf-8')
@@ -156,10 +157,10 @@ class LoginRequest(object):
             logger.warn('NOT Unicode, return what we got from server ...')
             ret = r
 
-        self.data['code'] = response.getcode()
-        self.data['url'] = response.geturl()
-        self.data['headers'] = response.headers.dict
-
-        logger.debug('Fetch Result for Request: %s\n%s' % (url, json.dumps(self.data, indent=4)))
+        self.result.pop('error')
+        self.result['code'] = response.getcode()
+        self.result['url'] = response.geturl()
+        self.result['headers'] = response.headers.dict
+        logger.debug('Fetch Result for Request: %s\n%s' % (url, json.dumps(self.result, indent=4)))
 
         return ret

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import logging
 import os
 import re
 
@@ -10,9 +9,7 @@ from flask.ext.babel import Babel
 from flask.ext.themes2 import Themes
 
 import views
-from sqlalchemy.engine import create_engine
 from .extensions import db, mail
-from .jobs import configure_jobs
 from .libs.flask_util_js import FlaskUtilJs
 from .models import TPLHome
 
@@ -44,11 +41,6 @@ def configure_extensions(app):
     mail.init_app(app)
     Themes(app, app_identifier=__name__)
     FlaskUtilJs(app)
-
-    with app.app_context():
-        db_engine = db.engine
-
-    configure_jobs(app, db_engine)
 
 
 def configure_i18n(app):

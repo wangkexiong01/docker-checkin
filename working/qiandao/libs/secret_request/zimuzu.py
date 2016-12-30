@@ -38,7 +38,7 @@ class ZimuzuRequest(LoginRequest):
                     'url_back': 'http://www.zimuzu.tv/user/user/index'}
         jsondata = self.fetch_with_yunso(self.login_url, method='POST', data=postdata)
 
-        if self.data.get('code') == 200:
+        if self.result.get('code') == 200:
             try:
                 resp = json.loads(jsondata)
 
@@ -91,7 +91,7 @@ class ZimuzuRequest(LoginRequest):
 
                 if resp.get('status') == 1:
                     resp = self.fetch_with_yunso(self.checkin_url1)
-                    if self.data.get('code') == 200:
+                    if self.result.get('code') == 200:
                         dom = lxml.html.fromstring(resp)
                         lastdays = dom.xpath('//div[@class="a2 tc"]/font[@class="f3"]')
 
@@ -110,7 +110,6 @@ class ZimuzuRequest(LoginRequest):
                 logger.error('[zimuzu] %s failed to checkin ...' % account)
                 self.show_yunsuo_redirect(jsondata)
         else:
-            logger.info('[zimuzu] Cookie Expired ... ')
             self.show_yunsuo_redirect(resp)
 
         return lastcheckin

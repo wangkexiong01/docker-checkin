@@ -14,10 +14,6 @@ DEBUG = False
 #    handlers will be remove by flask and generate a new one.
 LOGGER_NAME = 'flask_default'
 
-# DB
-SQLALCHEMY_DATABASE_URI = 'sqlite:///../database/qiandao.db'
-SQLALCHEMY_TRACK_MODIFICATIONS = True
-
 # WTF Secret
 SECRET_KEY = gen_randomkey(24)
 CSRF_SESSION_KEY = gen_randomkey(24)

@@ -1,11 +1,16 @@
 # -*- coding:utf-8 -*-
 import importlib
+import logging.config
 import os
 import string
+import sys
 from random import choice
 from string import Template
 
+import yaml
 from flask.ext.script import Manager, Server, Shell, prompt_bool
+
+logger = logging.getLogger('root')
 
 app4name = None
 running_app = None
@@ -18,11 +23,10 @@ def make_app(app_name):
 
         app4name = app_name
         running_app = importlib.import_module(app_name)
-    except ImportError:
+        return running_app.create_app()
+    except (ImportError, AttributeError):
         print('%s is not proper programming here.....' % app4name)
         exit(-1)
-
-    return running_app.create_app()
 
 
 manager = Manager(make_app)
@@ -184,4 +188,16 @@ def update_babel(keywords):
 
 
 if __name__ == "__main__":
+    log_config = 'instance/logging.yaml'
+    logging.config.dictConfig(yaml.load(open(log_config, 'r')))
+
+    app_namespace, _ = manager.create_parser(sys.argv[0]).parse_known_args(sys.argv[1:])
+    kwargs = app_namespace.__dict__
+    if 'app_name' in kwargs:
+        try:
+            running_jobs = importlib.import_module(kwargs['app_name'] + '.jobs')
+            running_jobs.configure_jobs()
+        except (ImportError, AttributeError):
+            pass
+
     manager.run()

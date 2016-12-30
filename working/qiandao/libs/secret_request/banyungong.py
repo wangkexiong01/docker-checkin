@@ -30,7 +30,7 @@ class BanyungongRequest(LoginRequest):
         ret = u'Login Failed'
 
         resp = self.fetch(self.login_url)
-        if self.data.get('code') == 200:
+        if self.result.get('code') == 200:
             dom = lxml.html.fromstring(resp)
             hidden = dom.xpath('//input')
 
@@ -43,7 +43,7 @@ class BanyungongRequest(LoginRequest):
                     postdata[i.name] = i.value
 
             resp = self.fetch(self.login_url, method='POST', data=postdata)
-            if self.data.get('code') == 200:
+            if self.result.get('code') == 200:
                 dom = lxml.html.fromstring(resp)
                 sign_href = dom.xpath('//div[@id="require"]/a[@id="ucHeader1_hlkDaySign"]')
                 if len(sign_href) > 0 and sign_href[0].text == u'每日签到':
@@ -106,8 +106,6 @@ class BanyungongRequest(LoginRequest):
                     logger.info('[banyungong] %s checkin with total: %s' % (account, days))
                 else:
                     logger.error('[banyungong] %s failed to do checkin ...' % account)
-        else:
-            logger.info('[banyungong] Cookie Expired ...')
 
         return days
 

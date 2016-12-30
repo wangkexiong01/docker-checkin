@@ -1,9 +1,12 @@
 # -*- coding:utf-8 -*-
 
-import logging.config
 import os
 
-import yaml
+PRJ_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# DB
+SQLALCHEMY_DATABASE_URI = 'sqlite:///%s/../database/qiandao.db' % PRJ_ROOT
+SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 # Using OS environment settings
 # Generally this is where sensitive information stored ...
@@ -11,8 +14,3 @@ import yaml
 for x in os.environ.keys():
     if x.startswith('APP_'):
         globals()[x.strip('APP_')] = os.environ.get(x)
-
-# Logging
-########################################################
-log_config = os.path.dirname(os.path.abspath(__file__)) + os.sep + 'logging.yaml'
-logging.config.dictConfig(yaml.load(open(log_config, 'r')))

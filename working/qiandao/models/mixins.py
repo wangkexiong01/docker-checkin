@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import time
+
 from ..extensions import db
 
 
@@ -26,6 +28,7 @@ class UserMixin(db.Model):
     checkin2 = db.Column(db.String(512))
 
     def __init__(self):
+        self.ctime = int(time.time())
         self.cookie_inuse = 0
         self.cookie_life = 0
         self.last_success = 0
