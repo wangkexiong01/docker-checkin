@@ -78,16 +78,17 @@ class DailyCheckinJob(object):
         self.scheduler.every().hour.at(minute).do(self.renew_waiting)
 
         t = Thread(target=self.run_schedule)
-        t.setName('PeriodSchedule')
+        t.setName('Schedule')
         t.setDaemon(True)
         t.start()
         self.timer = t
 
         t = Thread(target=self.run_trigger)
-        t.setName('FirstTrigger')
+        t.setName('FirstRun')
         t.setDaemon(True)
         t.start()
 
+        logger.info('Started checkin jobs ...')
         self.working = True
 
     def run_schedule(self):
@@ -96,8 +97,6 @@ class DailyCheckinJob(object):
             time.sleep(1)
 
     def run_trigger(self):
-        time.sleep(60)  # Administration Work should be finished in 60s
-
         self.executor.submit(self.handle_process_queue)
         self.executor.submit(self.handle_result_queue)
 

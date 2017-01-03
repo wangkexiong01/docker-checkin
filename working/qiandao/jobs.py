@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import time
+from threading import Thread
 
 from .background.checkin import DailyCheckinJob
 
@@ -16,7 +18,13 @@ def configure_jobs():
     workers = app.config.get('JOB_THREADS', 100)
     db_engine = db.get_engine(app)
 
-    daemon_job = DailyCheckinJob(db_engine, max_workers=workers)
-    daemon_job.start()
+    def delay_start(job):
+        time.sleep(60)
+        job.start()
 
-    logger.info('Started checkin jobs in thread pool(%s)' % (id(daemon_job)))
+    daemon_job = DailyCheckinJob(db_engine, max_workers=workers)
+    t = Thread(target=delay_start, args=(daemon_job,))
+    t.setName('DelayJob')
+    t.setDaemon(True)
+    t.start()
+
