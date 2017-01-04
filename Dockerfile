@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.4
 MAINTAINER wangkexiong <wangkexiong@gmail.com>
 
 ENV TZ "Asia/Shanghai"

@@ -39,7 +39,7 @@ def singleton(klass):
 
 @singleton
 class DailyCheckinJob(object):
-    check_point = '00:55'
+    check_point = '00:00'
 
     def __init__(self, db_engine, max_workers=100):
         # Mark if background jobs already running
