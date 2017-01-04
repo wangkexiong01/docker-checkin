@@ -50,13 +50,14 @@ def createall():
     if hasattr(running_app, 'db') and hasattr(running_app.db, 'create_all'):
         before_create = set(running_app.db.engine.table_names())
         running_app.db.create_all()
-        after_create = set(running_app.db.engine.table_names())
 
         if hasattr(running_app, 'import_data'):
             running_app.import_data()
 
+        after_create = set(running_app.db.engine.table_names())
         for table in (after_create - before_create):
             print 'Created table: {}'.format(table)
+        print
 
 
 @manager.command
