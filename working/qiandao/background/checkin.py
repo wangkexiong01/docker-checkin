@@ -176,7 +176,6 @@ class DailyCheckinJob(object):
         try:
             if cookie is not None:
                 logger.debug('[%s] Using cookie for %s' % (site, account))
-                request.load_cookie(cookie)
                 days = request.checkin(cookie)
 
                 if days is None and 'error' not in request.result:

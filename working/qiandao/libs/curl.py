@@ -25,11 +25,10 @@ class LoginRequest(object):
         self.opener = None
 
     def load_cookie(self, cookie):
-        logging.debug("cookie type: %s" % type(cookie))
-        if isinstance(cookie, str):
-            logging.debug('Load Cookie ...')
-            self.cookie = strcookiejar.StrCookieJar(cookie)
-            self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
+        logger.debug("cookie type: %s" % type(cookie))
+        logging.debug('Load Cookie ...')
+        self.cookie = strcookiejar.StrCookieJar(str(cookie))
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
 
     def dump_cookie(self):
         return self.cookie.dump() if self.cookie is not None else None
