@@ -110,7 +110,7 @@ class DailyCheckinJob(object):
     def renew_waiting(self):
         if not self.administration:
             for site in site_helper:
-                if (datetime.utcnow().hour + site_helper[site][0]) % 24 == 23:
+                if (datetime.utcnow().hour + site_helper[site][0]) % 24 == 0:
                     self.commander.submit(self.produce, site)  # Submit new thread for tomorrow
                 else:
                     if not self.supervisor[site]:
@@ -143,7 +143,9 @@ class DailyCheckinJob(object):
                 if action.upper() == 'NORMAL':
                     prepare = session.query(job_model).limit(self.batch).offset(offset).all()
                 elif action.upper() == 'RETRY':
-                    today_begin4checkin = ((int(time.time()) / (24 * 3600)) * 24 * 3600) - timezone * 3600
+                    current = int(time.time())
+                    today_begin4checkin = ((current / (24 * 3600)) * 24 * 3600) - timezone * 3600
+                    logger.debug('[%s] New round: %s and Current: %s' % (site, today_begin4checkin, current))
                     prepare = session.query(job_model).filter(job_model.last_success < today_begin4checkin).limit(
                         self.batch).offset(offset).all()
 

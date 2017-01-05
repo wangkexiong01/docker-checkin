@@ -25,6 +25,7 @@ class LoginRequest(object):
         self.opener = None
 
     def load_cookie(self, cookie):
+        logging.debug("cookie type: %s" % type(cookie))
         if isinstance(cookie, str):
             logging.debug('Load Cookie ...')
             self.cookie = strcookiejar.StrCookieJar(cookie)
