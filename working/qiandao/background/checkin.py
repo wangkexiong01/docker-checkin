@@ -17,10 +17,10 @@ from ..models import XiamiUser, BanyungongUser, ZimuzuUser, PacktUser
 logger = logging.getLogger(__name__)
 
 site_helper = {
-    'packtpub': (0, PacktRequest, PacktUser),  # Server in British
-    'xiami': (8, XiamiRequest, XiamiUser),  # Server for China
-    'banyungong': (8, BanyungongRequest, BanyungongUser),
+    'packtpub': (0, PacktRequest, PacktUser),
+    'xiami': (8, XiamiRequest, XiamiUser),
     'zimuzu': (8, ZimuzuRequest, ZimuzuUser),
+    'banyungong': (9, BanyungongRequest, BanyungongUser),
 }
 
 
@@ -144,8 +144,7 @@ class DailyCheckinJob(object):
                     prepare = session.query(job_model).limit(self.batch).offset(offset).all()
                 elif action.upper() == 'RETRY':
                     current = int(time.time())
-                    today_begin4checkin = ((current / (24 * 3600)) * 24 * 3600) - timezone * 3600
-                    logger.debug('[%s] New round: %s and Current: %s' % (site, today_begin4checkin, current))
+                    today_begin4checkin = ((current + timezone * 3600 / (24 * 3600)) * 24 * 3600) - timezone * 3600
                     prepare = session.query(job_model).filter(job_model.last_success < today_begin4checkin).limit(
                         self.batch).offset(offset).all()
 
