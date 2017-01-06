@@ -144,7 +144,7 @@ class DailyCheckinJob(object):
                     prepare = session.query(job_model).limit(self.batch).offset(offset).all()
                 elif action.upper() == 'RETRY':
                     current = int(time.time())
-                    today_begin4checkin = ((current + timezone * 3600 / (24 * 3600)) * 24 * 3600) - timezone * 3600
+                    today_begin4checkin = (((current + timezone * 3600) / (24 * 3600)) * 24 * 3600) - timezone * 3600
                     prepare = session.query(job_model).filter(job_model.last_success < today_begin4checkin).limit(
                         self.batch).offset(offset).all()
 
