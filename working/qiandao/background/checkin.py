@@ -20,7 +20,7 @@ site_helper = {
     'packtpub': (0, PacktRequest, PacktUser),
     'xiami': (8, XiamiRequest, XiamiUser),
     'zimuzu': (8, ZimuzuRequest, ZimuzuUser),
-    'banyungong': (9, BanyungongRequest, BanyungongUser),
+    'banyungong': (8, BanyungongRequest, BanyungongUser),
 }
 
 
