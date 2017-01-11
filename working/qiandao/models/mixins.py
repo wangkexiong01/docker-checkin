@@ -9,6 +9,7 @@ class UserMixin(db.Model):
     __abstract__ = True
 
     id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer)
     ctime = db.Column(db.Integer)
 
     account = db.Column(db.String(128), index=True, unique=True)
@@ -25,7 +26,8 @@ class UserMixin(db.Model):
 
     checkin0 = db.Column(db.String(512))
     checkin1 = db.Column(db.String(512))
-    checkin2 = db.Column(db.String(512))
+
+    memo = db.Column(db.String(512))
 
     def __init__(self):
         self.ctime = int(time.time())
