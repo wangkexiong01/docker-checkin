@@ -9,7 +9,7 @@ class UserMixin(db.Model):
     __abstract__ = True
 
     id = db.Column(db.Integer, primary_key=True)
-    owner_id = db.Column(db.Integer)
+    owner_id = db.Column(db.Integer, index=True)
     ctime = db.Column(db.Integer)
 
     account = db.Column(db.String(128), index=True, unique=True)
@@ -37,6 +37,7 @@ class UserMixin(db.Model):
         self.last_fail = 0
         self.day_fails = 0
         self.cont_fails = 0
+        self.memo = u'不要着急 休息 休息一会...'
 
     def __repr__(self):
         return 'account = %s;last_success = %s;checkin0 = %s' % (self.account, self.last_success, self.checkin0)

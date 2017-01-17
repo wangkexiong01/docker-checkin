@@ -29,6 +29,8 @@ loggers:
     propagate: False
   qiandao.libs.curl:
     level: DEBUG
+  qiandao.libs.mail:
+    level: DEBUG
   qiandao.background.checkinjob:
     level: DEBUG
 ...

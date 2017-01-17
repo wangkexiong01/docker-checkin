@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import time
+
+import pytz
 
 from ..extensions import db
 
@@ -14,9 +17,12 @@ class WebUser(db.Model):
 
     email = db.Column(db.String(64))
     timezone = db.Column(db.String(32))
-    prefer = db.Column(db.String(5))
+
+    prefer = db.Column(db.Integer)
+    last = db.Column(db.Integer)
 
     def __init__(self):
         self.ctime = int(time.time())
         self.timezone = 'Asia/Shanghai'
-        self.prefer = '09/30'
+        self.prefer = 0
+        self.last = 0

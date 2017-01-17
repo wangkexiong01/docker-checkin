@@ -26,12 +26,12 @@ site_helper = {
     'banyungong': (8, BanyungongRequest, BanyungongUser),
 }
 
-memo_success = Template(u'''最近签到成功: $success
-今日签到记录: $today_checkin
-昨日签到记录: $yesterday_checkin
+memo_success = Template(u'''最近成功: $success
+今日: $today_checkin
+昨日: $yesterday_checkin
 ''')
 memo_failed = Template(u'''上次失败: $fail
-昨日签到记录: $yesterday_checkin
+昨日: $yesterday_checkin
 ''')
 
 
@@ -88,7 +88,7 @@ class DailyCheckinJob(object):
         self.scheduler.every().hour.at(minute).do(self.renew_waiting)
 
         t = Thread(target=self.run_schedule)
-        t.setName('Schedule')
+        t.setName('SchedJob')
         t.setDaemon(True)
         t.start()
         self.timer = t
@@ -165,7 +165,7 @@ class DailyCheckinJob(object):
                 if total > 0:
                     logger.info('[%s] Batch read %s accounts ...' % (site, total))
                     for user in prepare:
-                        self.process_queue.put((site, user.account, user.cookie, user.passwd, action == 'NORMAL'))
+                        self.process_queue.put((site, user.account, user.cookie, user.passwd))
 
                 if total < self.batch:
                     self.status[site] = False
@@ -179,7 +179,7 @@ class DailyCheckinJob(object):
             self.status[site] = False
             logger.debug('[%s] Finish scanning records ...' % site)
 
-    def checkin(self, site, account, cookie, password, day_trigger):
+    def checkin(self, site, account, cookie, password):
         days = None  # Clean result for each request
         expired = False
 
@@ -210,13 +210,12 @@ class DailyCheckinJob(object):
                 'checkin': days,
                 'expired': expired,
                 'dump': cookie,
-                'day_trigger': day_trigger,
             })
 
             request.clear_cookie()
         except Exception, e:
-            logger.error(e)
-            logger.info('[%s] Error happened while processing user: %s, skip to next...' % (site, account))
+            logger.debug(e)
+            logger.error('[%s] Error happened while processing user: %s, skip to next...' % (site, account))
 
     def check_administration(self, site):
         # TODO: Need to get this from DB
@@ -228,8 +227,8 @@ class DailyCheckinJob(object):
         while True:
             result = self.process_queue.get()
             if result is not None:
-                site, account, cookie, password, day_trigger = result
-                self.executor.submit(self.checkin, site, account, cookie, password, day_trigger)
+                site, account, cookie, password = result
+                self.executor.submit(self.checkin, site, account, cookie, password)
 
     def handle_result_queue(self):
         threading.currentThread().name = 'ResultQ'
@@ -247,7 +246,6 @@ class DailyCheckinJob(object):
                     dump = result['dump']
                     expired = result['expired']
                     days = result['checkin']
-                    day_trigger = result['day_trigger']
                     logger.debug('Receive result from %s with %s ...' % (site, account))
 
                     query = session.query(job_model).filter_by(account=account).first()
@@ -256,6 +254,12 @@ class DailyCheckinJob(object):
                         user_tz = 'UTC'
                         if user_info is not None:
                             user_tz = user_info.timezone
+
+                        day_trigger = False
+                        current = int(time.time())
+                        today_begin4checkin = ((current + timezone * 3600) / (24 * 3600)) * 24 * 3600 - timezone * 3600
+                        if query.last_success < today_begin4checkin and query.last_fail < today_begin4checkin:
+                            day_trigger = True
 
                         update_fields = dict()
 
@@ -280,9 +284,10 @@ class DailyCheckinJob(object):
 
                             update_fields['memo'] = memo_success.safe_substitute(dict(
                                 success=datetime.fromtimestamp(update_fields['last_success'],
-                                                                        pytz.timezone(user_tz)).isoformat(),
+                                                               pytz.timezone(user_tz)).isoformat(),
                                 today_checkin=update_fields['checkin0'],
-                                yesterday_checkin=update_fields['checkin1'] if 'checkin1' in update_fields else '',
+                                yesterday_checkin=update_fields[
+                                    'checkin1'] if 'checkin1' in update_fields else query.checkin1,
                             ))
                         else:
                             if day_trigger:
@@ -295,8 +300,9 @@ class DailyCheckinJob(object):
 
                             update_fields['memo'] = memo_failed.safe_substitute(dict(
                                 fail=datetime.fromtimestamp(update_fields['last_fail'],
-                                                                     pytz.timezone(user_tz)).isoformat(),
-                                yesterday_checkin=update_fields['checkin1'] if 'checkin1' in update_fields else '',
+                                                            pytz.timezone(user_tz)).isoformat(),
+                                yesterday_checkin=update_fields[
+                                    'checkin1'] if 'checkin1' in update_fields else query.checkin1,
                             ))
 
                         session.query(job_model).filter_by(account=account).update(update_fields)
