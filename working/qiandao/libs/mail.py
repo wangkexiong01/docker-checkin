@@ -68,7 +68,8 @@ class MailSMTPPool(object):
                     conn.connect(server)
                     conn.login(sender, pwd)
                     error = conn.sendmail(sender, rcpt, content.as_string())
-                    if not error:
+                    if error:
+                        logger.debug('error: %s' % error)
                         return False
 
                     return True
