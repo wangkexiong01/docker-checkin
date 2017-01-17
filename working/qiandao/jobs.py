@@ -21,19 +21,20 @@ def configure_jobs():
 
     smtp_configs = list()
     for key in app.config.keys():
-        if key.startswith('SMTP_SERVER_'):
-            suffix = key[12:]
+        if key.startswith('SMTP_SERVER'):
+            suffix = key[11:]
             server = app.config[key]
 
-            if 'SMTP_USERNAME_' + suffix not in app.config:
-                break
-            user = app.config['SMTP_USERNAME_' + suffix]
+            if ('SMTP_USERNAME' + suffix) not in app.config:
+                continue
+            user = app.config['SMTP_USERNAME' + suffix]
 
-            if 'SMTP_PASSWORD_' + suffix not in app.config:
-                break
-            password = app.config['SMTP_PASSWORD_' + suffix]
+            if ('SMTP_PASSWORD' + suffix) not in app.config:
+                continue
+            password = app.config['SMTP_PASSWORD' + suffix]
 
-            smtp_configs.append((server, user, password))
+            if (server, user, password) not in smtp_configs:
+                smtp_configs.append((server, user, password))
 
     def delay_start(jobs):
         time.sleep(60)

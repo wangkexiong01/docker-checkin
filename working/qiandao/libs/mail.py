@@ -33,7 +33,7 @@ class MailSMTPPool(object):
         finally:
             conn.quit()
 
-        logger.debug('SMTP: Resource %s added ...' % server)
+        logger.debug('SMTP: Resource %s(%s) added ...' % (server, sender))
         self.resource.append((server, sender, pwd))
         self.total += 1
         return True
@@ -55,8 +55,9 @@ class MailSMTPPool(object):
 
             content = None
             if isinstance(msg, basestring):
-                content = MIMEText(msg, 'plain')
-                content['From'] = 'Lazy<%s>' % sender
+                content = MIMEText(msg, 'plain', 'utf8')
+                content['From'] = u'Lazy<%s>' % sender
+                content['To'] = rcpt
                 content['Subject'] = 'FYI'
             if isinstance(msg, MIMEText):
                 content = msg
@@ -66,9 +67,11 @@ class MailSMTPPool(object):
                 try:
                     conn.connect(server)
                     conn.login(sender, pwd)
-                    error = conn.sendmail(sender, rcpt, content)
+                    error = conn.sendmail(sender, rcpt, content.as_string())
                     if not error:
                         return False
+
+                    return True
                 except SMTPException as e:
                     logger.debug('Error happened while sending email: %s' % e.message)
                     return False
@@ -76,5 +79,7 @@ class MailSMTPPool(object):
                     conn.quit()
             else:
                 logger.debug('Body is not accepted ...')
+                return False
         else:
             logger.debug('No Resource available ...')
+            return False

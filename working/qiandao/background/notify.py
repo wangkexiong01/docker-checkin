@@ -70,8 +70,10 @@ class DailyReportJob(object):
 
         current = int(time.time())
         try:
-            for user in session.query(WebUser).filter(WebUser.prefer > 0, current >= WebUser.prefer).all():
+            for user in session.query(WebUser).filter(WebUser.prefer > 0, current >= WebUser.prefer).order_by(
+                    WebUser.prefer).all():
                 if self.monitor[running]:
+                    logger.debug('Another Round is started, stop ...')
                     break
 
                 if user.email is not None and user.email != '':
@@ -83,7 +85,10 @@ class DailyReportJob(object):
                         for query in session.query(job_model).filter_by(owner_id=user.id).all():
                             info += query.memo
 
-                    self.pool.send(user.email, info)
-                    session.query(WebUser).filter_by(id=user.id).update({'last': int(time.time())})
+                    if self.pool.send(user.email, info):
+                        session.query(WebUser).filter_by(id=user.id).update({'last': int(time.time()),
+                                                                             'prefer': WebUser.prefer + 24 * 3600})
+
+            session.commit()
         finally:
             session.close()
