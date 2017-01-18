@@ -85,9 +85,9 @@ class DailyReportJob(object):
                         for query in session.query(job_model).filter_by(owner_id=user.id).all():
                             info += query.memo
 
-                    session.query(WebUser).filter_by(id=user.id).update({'last': int(time.time()),
-                                                                         'prefer': WebUser.prefer + 24 * 3600})
-
-            session.commit()
+                    if self.pool.send(user.email, info):
+                        session.query(WebUser).filter_by(id=user.id).update({'last': int(time.time()),
+                                                                             'prefer': WebUser.prefer + 24 * 3600})
+                        session.commit()
         finally:
             session.close()
